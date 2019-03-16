@@ -26,7 +26,7 @@ class Users extends Model {
   checkLogin({username, password}) {
     return this.checkUser({username})
       .then((data)=>{
-        if (!data) {return false;}
+        if (!data) { return false; }
         return this.compare(password, data.password, data.salt);
         
       });

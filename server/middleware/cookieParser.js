@@ -3,9 +3,8 @@ const parseCookies = (req, res, next) => {
   var cookieSplit;
   var noSemi;
   var cookieTuple;
-  if (!req.headers.cookie) {
-    req.cookies = {};
-  } else {
+  req.cookies = req.cookies || {};
+  if (req.headers.cookie) {
     cookieSplit = req.headers.cookie.split(' ');
     cookieSplit.forEach((val) =>{
       noSemi = val.split(';')[0];

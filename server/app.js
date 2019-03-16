@@ -19,28 +19,44 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(parseCookies);
 app.use(Auth.createSession);
+
 app.get('/signup', (req, res, next)=>{
   res.render('signup');
 });
 app.get('/', 
   (req, res) => {
-    res.render('index');
+    if (models.Sessions.isLoggedIn(req.session)) {
+      res.render('index');
+    } else {
+      res.redirect('/login');
+    }
+    // check if logged in
+    // if not redirect to login
+    
   });
 
 app.get('/create', 
   (req, res) => {
-    res.render('index');
+    if (models.Sessions.isLoggedIn(req.session)) {
+      res.render('create');
+    } else {
+      res.redirect('/login');
+    }
   });
 
 app.get('/links', 
   (req, res, next) => {
-    models.Links.getAll()
-      .then(links => {
-        res.status(200).send(links);
-      })
-      .error(error => {
-        res.status(500).send(error);
-      });
+    if (models.Sessions.isLoggedIn(req.session)) {
+      models.Links.getAll()
+        .then(links => {
+          res.status(200).send(links);
+        })
+        .error(error => {
+          res.status(500).send(error);
+        });
+    } else {
+      res.redirect('/login');
+    }
   });
   
 app.post('/links', 
@@ -83,9 +99,13 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.get('/login', (req, res, next)=>{
+  res.render('login');
+});
 app.post('/login', (req, res, next) => {
   models.Users.checkLogin(req.body).then((match)=>{
     if (match) {
+
       res.redirect('/');
     } else {
       res.redirect('/login');
@@ -98,7 +118,13 @@ app.post('/signup', (req, res, next)=> {
     .then((result) => {
       if (!result) {
         models.Users.create(req.body);
-        res.redirect('/');
+        // get that user's id
+        models.Users.get({username: req.body.username})
+          .then((entry)=>{
+            return models.Sessions.update({hash: req.session.hash}, {userId: entry.id}).then(()=>{
+              res.redirect('/');
+            });
+          });
       } else {
         res.redirect('/signup');
       }
@@ -106,6 +132,15 @@ app.post('/signup', (req, res, next)=> {
   // enter into whatever creates users (which will hash)
   // on callback we can end and redirect to index
   
+});
+
+app.get('/logout', (req, res, next) => {
+  models.Sessions.delete({hash: req.session.hash})
+    .then(response => {
+      delete req.cookies.shortlyid;
+      return Auth.createSession(req, res, next);
+    });
+    
 });
   
 
