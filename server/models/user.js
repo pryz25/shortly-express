@@ -34,6 +34,7 @@ class Users extends Model {
    * the record creation or rejected with the error that occured.
    */
   create({ username, password }) {
+    console.log('create user invoked');
     let salt = utils.createRandom32String();
 
     let newUser = {
@@ -43,6 +44,11 @@ class Users extends Model {
     };
 
     return super.create.call(this, newUser);
+  }
+
+  checkUser({ username}, callback ) {
+    super.get.call(this, { username } )
+      .then(callback);
   }
 }
 
