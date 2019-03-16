@@ -23,6 +23,14 @@ class Users extends Model {
     return utils.compareHash(attempted, password, salt);
   }
 
+  checkLogin({username, password}) {
+    return this.checkUser({username})
+      .then((data)=>{
+        if (!data) {return false;}
+        return this.compare(password, data.password, data.salt);
+        
+      });
+  }
   /**
    * Creates a new user record with the given username and password.
    * This method creates a salt and hashes the password before storing
@@ -34,7 +42,6 @@ class Users extends Model {
    * the record creation or rejected with the error that occured.
    */
   create({ username, password }) {
-    console.log('create user invoked');
     let salt = utils.createRandom32String();
 
     let newUser = {
@@ -46,9 +53,8 @@ class Users extends Model {
     return super.create.call(this, newUser);
   }
 
-  checkUser({ username}, callback ) {
-    super.get.call(this, { username } )
-      .then(callback);
+  checkUser({ username} ) {
+    return super.get.call(this, { username } );
   }
 }
 

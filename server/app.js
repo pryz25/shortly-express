@@ -5,6 +5,7 @@ const partials = require('express-partials');
 const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
 const models = require('./models');
+const parseCookies = require('./middleware/cookieParser');
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 
-
+app.use(parseCookies);
 app.get('/', (req, res, next)=>{
   res.render('signup');
 });
@@ -73,7 +74,6 @@ app.post('/links',
         res.status(500).send(error);
       })
       .catch(link => {
-        console.log(link.code, ' is the link');
         res.status(200).send(link);
       });
   });
@@ -82,18 +82,26 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-app.post('/signup', (req, res, next)=> {
-  console.log('get made');
-  // collect the data
-  models.Users.checkUser(req.body, (result) => {
-    console.log('User checked result: ', result);
-    if (!result) {
-      models.Users.create(req.body);
-      res.render('index');
+app.post('/login', (req, res, next) => {
+  models.Users.checkLogin(req.body).then((match)=>{
+    if (match) {
+      res.redirect('/');
     } else {
-      res.render('signup');
+      res.redirect('/login');
     }
   });
+});
+app.post('/signup', (req, res, next)=> {
+  // collect the data
+  models.Users.checkUser(req.body)
+    .then((result) => {
+      if (!result) {
+        models.Users.create(req.body);
+        res.redirect('/');
+      } else {
+        res.redirect('/signup');
+      }
+    });
   // enter into whatever creates users (which will hash)
   // on callback we can end and redirect to index
   
